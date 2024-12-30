@@ -1,0 +1,36 @@
+@import "code.css";
+
+body {
+    font-family: Verdana;
+    font-size: 18px;
+
+    margin: 0 auto;
+    width: 1024px;
+}
+
+h1, h2, h3, h4, h5, h6, img {
+    text-align: center;
+    margin-top: 0.15em;
+    margin-bottom: 0.15em;
+}
+
+aside {
+    position: absolute;
+    margin: 0 auto;
+    padding-left: 1rem;
+    margin-left: 1024px;
+    float: right;
+    border-top: solid 1px #dee9ed;
+    font-size: 16px;
+}
+
+aside > p {
+    margin-top: 0.3rem;
+    margin-right: 30%;
+}
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}

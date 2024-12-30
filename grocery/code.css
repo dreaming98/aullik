@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+code {
+    font-family: "Fira Code" !important;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variant-ligatures: none;
+}
+
+.code-block {
+    border: 1px #aaa solid;
+    
+    padding-left: 1rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.code-block pre {
+    font-family: "Fira Code" !important;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variant-ligatures: none; 
+}
+
+.code-block .language {
+    position: absolute;
+    margin-left: -30px;
+    width: 1024px;
+    text-align: right;
+    color: #444;
+    font-size: 14px;
+}
+
+.code-block .source {
+    position: absolute;
+    margin: 0 auto;
+    padding-left: 0;
+    margin-left: 1024px;
+    color: #444;
+    text-align: left;
+}
+
+.code-block source em {
+    color: #000;
+    font-style: normal;
+}
+
+.code-block pre .type {
+    font-family: inherit !important;
+    color: #267f99;
+}
+
+.code-block pre .keyword {
+    font-family: inherit !important;
+    color: #af00db;
+}
+
+.code-block pre .keyword-control {
+    font-family: inherit !important;
+    color: #0000ff;
+}
+
+.code-block pre .function {
+    font-family: inherit !important;
+    color: #795e26;
+}
+
+.code-block pre .identifier {
+    font-family: inherit !important;
+    color: #001080;
+}
+
+.code-block pre .constant {
+    font-family: inherit !important;
+    color: #0070c1;
+}
+
+.code-block pre .string {
+    font-family: inherit !important;
+    color: #a31515;
+}
+
+.code-block pre .number {
+    font-family: inherit !important;
+    color: #098658;
+}
+
+.code-block pre .comment {
+    font-family: inherit !important;
+    color: #008000;
+}
+
+.code-block pre .preprocessor {
+    font-family: inherit !important;
+    color: #800000;
+}

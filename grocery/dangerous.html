@@ -1,0 +1,651 @@
+<html>
+    <head>
+        <title>Dangerous! - my first successful decompilation journey.</title>
+        <link rel="stylesheet" href="styles.css">
+
+        <!-- Importing MathJax -->
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"></script>
+    </head>
+    <body>
+        <div style="text-align: center;">
+            <h1>Dangerous!</h1>
+            <h2>my first successful decompilation journey.</h2>
+            <p style="margin-top:0.3em">
+                by 
+                <a href="https://bsky.app/profile/woagitsjaiden.bsky.social">jaiden!</a>
+            </p>
+        </div>
+        <p>
+            I assume you're here because of <a href="myjourney.html">this article</a>, so you know the story from Dreaming's side. While his article does state my contributions to finding out what the game considers to be a "healthy" diet, which I highly appreciate, he doesn't really *explain* how I reverse-engineered the game through him screensharing the decompiled ActionScript code, which makes sense, since Dreaming doesn't know read programming languages other than the one Clickteam Fusion uses and also Batch. There could be more, I'm not asking.
+        </p>
+        <p>
+            This article will walk you through the decompilation process as it happened, beginning with Dreaming streaming the game in a Discord call. He had shown me the game once before, telling me how the game works directly (and not showing me the tutorial screen, I can't fully deny having the "innate gamer desire to not read tutorials", but how am I meant to skip a tutorial when I was unaware of it's existence, Dreaming?). I found the game silly and quirky, and Dreaming had confided in me that no one he ever got to play the game got the (at the time) mythical "Healthy!" text, or had scored the Balanced Diet Score. I remembered this, and knowing Dreaming had a <a href="https://github.com/jindrapetrik/jpexs-decompiler">Flash decompiler</a>, I asked him if he could simply decompile the game, read the code, and figure out what classifies as "healthy". Dreaming explains that while he could do that, he wouldn't be able to understand the code, since he doesn't know how to read ActionScript, the language for programming in Flash. This makes me remember a key fact about ActionScript, a fact so useful that it allowed me to understand the code despite the fact that this was my first time ever reading ActionScript.
+        </p>
+
+        <h2 style="text-align: center;">The Problem with Trying to Read Other Languages</h2>
+        <p>Computers read binary ones and zeros to process information. This is, astonishingly, not too readable to anything other than a computer. This is why programming languages exist - to abstract the complicated nature of the hardware you're running on and have your program be in a more human-friendly format.</p>
+        <p>There exists a problem with this though. There are many different ways you can express the same instructions. Compare 6502 Assembly to C to Python to <a href="https://esolangs.org/wiki/Tetanus">Tetanus</a>.</p>
+        <div class="code-block">
+            <pre class="language">C</pre>
+            <pre class="insert">
+<span class="preprocessor">#import &lt;stdio.h&gt;</span>
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+    <span class="function">printf</span>(<span class="string">"Hello, world!"</span>);
+    <span class="keyword-control">return</span> <span class="number">0</span>;
+}
+</pre>
+        </div>
+        <br>
+        <div class="code-block">
+            <pre class="language">Python</pre>
+            <pre class="insert">
+<span class="function">print</span>(<span class="string">"Hello, world!"</span>)
+</pre>
+        </div>
+        <br>
+        <div class="code-block">
+            <pre class="language">Tetanus</pre>
+            <pre class="insert">
+^(H.+)
+!\1~
+Hello, world!
+</pre>
+        </div>
+
+        <p>I won't go into the arguments about language syntaxes (e.g. the fact that C's syntax has become the de-facto standard for any new language), this is to show that just because you know one language, doesn't imply that you will be able to read a different language.</p>
+        <aside style="margin-top: 4.5rem;">
+            <p>
+                Seriously, <code>printf()</code>, <code>std:cout &lt;&lt; "" &lt;&lt; std:endl</code>, and <code>System.Console.WriteLine()</code>? Why is this one <u>very common</u> thing different across all 3 languages?
+            </p>
+        </aside>
+        <p>Something that does help, though, is if that different language follows the same style as another language that you do know. If you knew C++, you could look at C code and know what it's doing, to an extent. The same applies to C++ programmers reading C#. The languages are so similar in syntax that you'd be able to get a good idea on control flow, what variables mean what, and other things. Unless you're trying to output text to the console.</p>
+        <p>Something that would help <i>even more</i> than similar syntaxes would be if there was some sort of standardised programming language, where if you know if a language meets the standard's requirements, you would be able to know the majority of the features of the language, down to the technical quirks.</p>
+        
+        <h2>The ECMAScript Standard</h2>
+
+        <p>The <a href="https://tc39.es/ecma262/">ECMAScript Standard</a> is a large document that specifies certain requirements for general purpose scripting languages. It specifies types, operators, libraries and their functions, grammatical syntax, various objects, and a lot more. Like, the PDF version of the standard as of writing this is 816 pages. It's a very broad and deep standard.</p>
+        <aside style="margin-top: 2.5rem">
+            <p>
+                I would highly recommend looking at the code for the demonstrations here if you're unaware.
+            </p>
+        </aside>
+        <p>You might know the ECMAScript standard because of one very widely-used language that your computer is definitely running right now. JavaScript: the programming language that the internet runs on. Or, the one that you know for being able to write <a href='javascript:alert(("b" + "a" + + "a" + "a").toLowerCase())'>banana</a> in a funny way. Or, the one that can't <a href='javascript:alert("[" + [-1, 5, 11, 35, -7, 3, -13].toSorted().toString() + "]")'>sort lists correctly</a>.</p>
+        <p>I have some amount of experience with JavaScript through learning TypeScript, a superset of JavaScript developed by Microsoft to implement type safety into JavaScript. I'd be confident in my abilities if someone pointed a gun to my head and said "Do this <a href="https://leetcode.com/">LeetCode</a> puzzle in JavaScript!", as long as I had node or a browser console, and the ability to do copious amounts of search engine-ing.</p>
+        <p>Now that you have the necessary information, this aside can end and I can finally tell you that key fact about ActionScript that I mentioned like, three headings ago.</p>
+
+        <h2>That Key Fact About ActionScript that I Mentioned Like, Three Headings Ago.</h2>
+
+        <aside style="margin-top: 2.5rem;">
+            <p>
+                On some occasions, I read the ECMAScript standard and Wikipedia article to procrastinate in class.
+            </p>
+        </aside>
+        <p><b>ActionScript is based off of the ECMAScript standard.</b> See, that tangent wasn't for naught! The reason <i>why</i> I know this fact is really stupid. I told Dreaming this fact, along with a much more condensed version of the stuff I talked about above (there's no way in hell that he would've gave a shit). Something along the lines of "Oh, ActionScript is based off of the ECMAScript standard, which I know a fair bit of. Let me try looking at the code."</p>
+        <p>Dreaming changes his screenshare to look at the decompiled flash game, and lo and behold: I could understand it. There was, apparently, some minor obfuscation to the game, but the decompiler had automatic deobfuscation tools, which worked amazingly. The code was in a language I knew. Practically no differences. Now, the fun part began:</p>
+        
+        <h2>The Fun Part: Finding Out Where The Fuck We Should Start.</h2>
+        
+        <p>The first step was obvious. The game uses one word to describe how "healthy" your shopping cart is. These strings <i>must</i> be in the code somewhere! I tell Dreaming to look up the string "Dangerous!" (chosen completely arbitrarily, I think it was what Dreaming just had on the game at the time)</p>
+        <p>This placed us in the middle of the function that displayed the descriptor on the shopping cart screen.</p>
+
+        <aside style="margin-top: 5rem;">
+            <p>
+                All code snippets are taken <u>exactly</u> from the code decompilation passed through JPEXS' deobfuscator, including formatting. I will explicitly note when I have changed the code to be more readable - but I did not have the luxury of this on the day, as I was looking at a screenshare of the code, and could not modify it.</p>
+            </p>
+        </aside>
+
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.ShoppingCartPage:142-175</pre>
+            <pre class="insert">
+<span class="keyword">private function</span> <span class="function">updatePyramid()</span> : <span class="keyword">void</span>
+  {
+     <span class="keyword">var</span> <span class="identifier">_loc4_</span>:<span class="type">int</span> = <span class="number">0</span>;
+     <span class="keyword">var</span> <span class="identifier">_loc1_</span>:<span class="type">Array</span> = <span class="type">Object</span>(<span class="identifier">parent</span>).<span class="function">getFoodRatio</span>(<span class="identifier">foodArray</span>);
+     <span class="keyword">var</span> <span class="identifier">_loc2_</span>:<span class="type">Boolean</span> = <span class="type">Boolean</span>(<span class="type">Object</span>(<span class="identifier">parent</span>).<span class="function">checkIfBalancedDiet</span>(<span class="identifier">_loc1_</span>));
+     <span class="keyword">var</span> <span class="identifier">_loc3_</span>:<span class="type">int</span> = <span class="function">getHighestRatioCategory</span>(<span class="identifier">_loc1_</span>);
+     <span class="identifier">_loc4_</span> = <span class="number">0</span>;
+     <span class="keyword-control">while</span>(<span class="identifier">_loc4_</span> &lt; <span class="identifier">_loc1_</span>.<span class="identifier">length</span>)
+     {
+        <span class="identifier">pyramid</span>[<span class="string">"foodRatio"</span> + <span class="identifier">_loc4_</span>].<span class="identifier">text</span> = <span class="identifier">_loc1_</span>[<span class="identifier">_loc4_</span>].<span class="function">toString</span>();
+        <span class="identifier">_loc4_</span>++;
+     }
+     <span class="keyword-control">if</span>(!<span class="identifier">_loc2_</span>)
+     {
+        <span class="keyword-control">switch</span>(<span class="identifier">_loc3_</span>)
+        {
+           <span class="keyword-control">case</span> <span class="type">Food</span>.<span class="constant">PYRAMIDLEVEL_ONE</span>:
+              <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"unhealthyYellow"</span>);
+              <span class="keyword-control">break</span>;
+           <span class="keyword-control">case</span> <span class="type">Food</span>.<span class="constant">PYRAMIDLEVEL_TWO</span>:
+              <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"unhealthyOrange"</span>);
+              <span class="keyword-control">break</span>;
+           <span class="keyword-control">case</span> <span class="type">Food</span>.<span class="constant">PYRAMIDLEVEL_THREE</span>:
+              <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"harmful"</span>);
+              <span class="keyword-control">break</span>;
+           <span class="keyword-control">case</span> <span class="type">Food</span>.<span class="constant">PYRAMIDLEVEL_FOUR</span>:
+              <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"dangerous"</span>);
+        }
+     }
+     <span class="keyword-control">else</span>
+     {
+        <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"healthy"</span>);
+     }
+  }
+</pre>
+        </div>
+        <p>
+            Looking through this function, we can spot that <i>it is possible</i> to get "Healthy!". It's not like the game tells you that or anything. The lines of note are:
+        </p>
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.ShoppingCartPage:145-146,154-174</pre>
+            <pre class="insert">
+<span class="keyword">var</span> <span class="identifier">_loc1_</span>:<span class="type">Array</span> = <span class="type">Object</span>(<span class="identifier">parent</span>).<span class="function">getFoodRatio</span>(<span class="identifier">foodArray</span>);
+<span class="keyword">var</span> <span class="identifier">_loc2_</span>:<span class="type">Boolean</span> = <span class="type">Boolean</span>(<span class="type">Object</span>(<span class="identifier">parent</span>).<span class="function">checkIfBalancedDiet</span>(<span class="identifier">_loc1_</span>));
+<span class="comment">// ...</span>
+<span class="keyword-control">if</span>(!<span class="identifier">_loc2_</span>)
+{
+    <span class="comment">// ...</span>
+}
+<span class="keyword-control">else</span>
+{
+    <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"healthy"</span>);
+}
+</pre>
+        </div>
+
+        <aside style="margin-top: 1.5rem;">
+            <p>
+                Truthy value: a value that is interpreted as <code>true</code> when converted to a boolean.
+            </p>
+        </aside>
+        <p>
+            To get it, we see that the function <code>checkIfBalancedDiet()</code> needs to return a truthy value, which relies on <code>getFoodRatio()</code>. Due to JPEX's type annotations, we can see that <code>getFoodRatio()</code>, and by extension, <code>_loc1_</code>, are arrays.
+        </p>
+        <p>
+            So what does <code>getFoodRatio()</code> do? Another text search for this function landed us here:
+        </p>
+
+        <h2>12AM... The first func... <code>getFoodRatio()</code>.</h2>
+
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1111-1128</pre>
+            <pre class="insert">
+<span class="keyword">public function</span> <span class="function">getFoodRatio</span>(<span class="identifier">param1</span>:<span class="type">Array</span>) : <span class="type">Array</span>
+  {
+     <span class="keyword">var</span> <span class="identifier">_loc3_</span>:<span class="type">int</span> = <span class="number">0</span>;
+     <span class="keyword">var</span> <span class="identifier">_loc2_</span>:<span class="type">Array</span> = <span class="keyword">new</span> <span class="type">Array</span>();
+     <span class="identifier">_loc3_</span> = <span class="number">0</span>;
+     <span class="keyword-control">while</span>(<span class="identifier">_loc3_</span> &lt; <span class="type">Config</span>.<span class="constant">PYRAMIDLEVEL_TOTALNOOF</span>)
+     {
+        <span class="identifier">_loc2_</span>[<span class="identifier">_loc3_</span>] = <span class="number">0</span>;
+        <span class="identifier">_loc3_</span>++;
+     }
+     <span class="identifier">_loc3_</span> = <span class="number">0</span>;
+     <span class="keyword-control">while</span>(<span class="identifier">_loc3_</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>)
+     {
+        ++<span class="identifier">_loc2_</span>[<span class="identifier">param1</span>[<span class="identifier">_loc3_</span>].<span class="identifier">pyramidLevel</span> - <span class="number">1</span>];
+        <span class="identifier">_loc3_</span>++;
+     }
+     <span class="keyword-control">return</span> <span class="identifier">_loc2_</span>;
+  }
+</pre>
+        </div>
+
+        <p>First things first, we need to clean this up. There's some strange usage of <code>while</code> loops here. Let's step through what this loop actually does.</p>
+        <p>We first set the variable <code>_loc3_</code> to be 0, do some stuff, increment <code>_loc3_</code>, then if it is under a certain value, we continue looping. If you have a baseline knowledge of programming, this should be screaming something at you: there's an expression that is run before the loop happens, a condition that is checked before running the loop's contents, and another expression is run before looping.</p>
+        <p>This is just a <code>for</code> loop! Rewriting the function gives us the easier to read</p>
+
+        <aside style="margin-top: 3rem;">
+            <p>
+                <code>_loc2_</code> is created at the start of the function and is the output of the function, which I personally call <code>resultant</code> if the function is meant to transform the input into a desired output.
+            </p>
+        </aside>
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1111-1128 (modified)</pre>
+            <pre class="insert">
+<span class="keyword">public function</span> <span class="function">getFoodRatio</span>(<span class="identifier">param1</span>: <span class="type">Array</span>) : <span class="type">Array</span>
+{
+    <span class="keyword">var</span> <span class="identifier">resultant</span>: <span class="type">Array</span> = <span class="keyword">new</span> <span class="type">Array</span>();
+
+    <span class="keyword-control">for</span> (<span class="keyword">var</span> <span class="identifier">i</span>: <span class="type">int</span> = <span class="number">0</span>; <span class="identifier">i</span> &lt; <span class="type">Config</span>.<span class="constant">PYRAMIDLEVEL_TOTALNOOF</span>; <span class="identifier">i</span>++)
+    {
+        <span class="identifier">resultant</span>[<span class="identifier">i</span>] = <span class="number">0</span>;
+    }
+
+    <span class="keyword-control">for</span> (<span class="keyword">var</span> <span class="identifier">i</span>: <span class="type">int</span> = <span class="number">0</span>; <span class="identifier">i</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>; <span class="identifier">i</span>++)
+    {
+        ++<span class="identifier">resultant</span>[<span class="identifier">param1</span>[<span class="identifier">i</span>].<span class="identifier">pyramidLevel</span> - <span class="number">1</span>];
+    }
+    
+    <span class="keyword-control">return</span> <span class="identifier">resultant</span>;
+}
+</pre>
+        </div>
+
+        <aside style="margin-top:1.5rem">
+            <p>
+                While writing this (literally, like, while writing this sentence), I think I finally understood "NOOF" means. It's the "number of" (or no. of) levels to the pyramid.
+            </p>
+        </aside>
+        <p>Much better! The first loop is easy to understand, we're just setting the <code>resultant</code> array to be filled with a constant number of 0s.</p>
+        <p>We could use fancy new JavaScript features to make this function even easier to read, since we can collapse the creation of the array and the first for loop into</p>
+
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1113-1120 (modified)</pre>
+            <pre class="insert">
+<span class="keyword">var</span> <span class="identifier">resultant</span>: <span class="type">Array</span> = <span class="keyword">new</span> <span class="type">Array</span>(<span class="type">Config</span>.<span class="constant">PYRAMIDLEVEL_TOTALNOOF</span>).<span class="function">fill</span>(<span class="number">0</span>);
+</pre>
+        </div>
+
+        <p>The second <code>for</code> loop iterates over each element in the array passed into the function, which we can write as a <code>foreach</code> loop.</p>
+
+        <aside style="margin-top: 2.5rem;">
+            <p>
+                Substituted pre-increment for post-increment because it just looks nicer, also it helps in explaining what's happening in this line from left to right.
+            </p>
+        </aside>
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1121-1126 (modified)</pre>
+            <pre class="insert">
+<span class="identifier">param1</span>.<span class="function">forEach</span>((<span class="identifier">item</span>) => {
+    <span class="identifier">resultant</span>[<span class="identifier">item</span>.<span class="identifier">pyramidLevel</span> - <span class="number">1</span>]++;
+});
+</pre>
+
+        </div>
+        
+        <p>So now we just need to know what <code>param1</code> contains as it's elements, since JPEXS unfortunately does not give a type annotation deeper than <code>Array</code>. We have a good hint though, it's an object or a class with the member <code>pyramidLevel</code>, so it was back to ol' reliable Ctrl+F.</p>
+
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Food:3-35</pre>
+            <pre class="insert">
+<span class="keyword">public class</span> <span class="type">Food</span> <span class="keyword">extends</span> <span class="type">MovieClip</span>
+{
+  <span class="keyword">public static var</span> <span class="constant">PYRAMIDLEVEL_ONE</span>:<span class="type">int</span> = <span class="number">0</span>;
+  
+  <span class="keyword">public static var</span> <span class="constant">PYRAMIDLEVEL_TWO</span>:<span class="type">int</span> = <span class="number">1</span>;
+  
+  <span class="keyword">public static var</span> <span class="constant">PYRAMIDLEVEL_THREE</span>:<span class="type">int</span> = <span class="number">2</span>;
+  
+  <span class="keyword">public static var</span> <span class="constant">PYRAMIDLEVEL_FOUR</span>:<span class="type">int</span> = <span class="number">3</span>;
+  
+  <span class="keyword">public var</span> <span class="identifier">type</span>:<span class="type">int</span>;
+  
+  <span class="keyword">public var</span> <span class="identifier">price</span>:<span class="type">int</span>;
+  
+  <span class="keyword">public var</span> <span class="identifier">calories</span>:<span class="type">int</span>;
+  
+  <span class="keyword">public var</span> <span class="identifier">pyramidLevel</span>:<span class="type">int</span>;
+  
+  <span class="keyword">public function</span> <span class="type">Food</span>()
+  {
+     <span class="type">super</span>();
+  }
+  
+  <span class="keyword">public function</span> <span class="function">initialize</span>(<span class="identifier">param1</span>:<span class="type">int</span>, <span class="identifier">param2</span>:<span class="type">int</span>, <span class="identifier">param3</span>:<span class="type">int</span>, <span class="identifier">param4</span>:<span class="type">int</span>) : <span class="keyword">void</span>
+  {
+     <span class="keyword">this</span>.<span class="identifier">type</span> = <span class="identifier">param1</span>;
+     <span class="keyword">this</span>.<span class="identifier">price</span> = <span class="identifier">param2</span>;
+     <span class="keyword">this</span>.<span class="identifier">calories</span> = <span class="identifier">param3</span>;
+     <span class="keyword">this</span>.<span class="identifier">pyramidLevel</span> = <span class="identifier">param4</span>;
+  }
+}
+</pre>
+        </div>
+
+        <aside style="margin-top: 2.5rem;">
+            <p>
+                This didn't occur to me on the night, but since <code>pyramidLevel</code> can equal 0, then is the foreach loop in <code>getFoodRatio()</code> assigning a value to the negative indices of it's <code>resultant</code>? I have no clue and don't really care to debug.
+            </p>
+        </aside>
+
+        <p>So, it's an extension of a type used in Flash games for the food items. We can see that <code>pyramidLevel</code> takes one of four values (0, 1, 2, or 3).</p>
+        <p>Now that we know what <code>pyramidLevel</code> means, we can see that the foreach loop simply counts the number of foods in each <code>pyramidLevel</code>. For example, if we had one ice cream, one suger, two celery, and one tomato, it would iterate over each item in the shopping cart, find out there's two sugary foods and three fruits and vegetables, and output <code>[2, 0, 3, 0]</code> to represent this.</p>
+    
+        <h2 id="balanced">The Final Stretch: <code>checkIfBalancedDiet()</code>.</h2>
+    
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1130-1164</pre>
+            <pre class="insert">
+<span class="keyword">public function</span> <span class="function">checkIfBalancedDiet</span>(<span class="identifier">param1</span>:<span class="type">Array</span>) : <span class="type">Boolean</span>
+  {
+     <span class="keyword">var</span> <span class="identifier">_loc3_</span>:<span class="type">Number</span> = <span class="keyword">NaN</span>;
+     <span class="keyword">var</span> <span class="identifier">_loc4_</span>:<span class="type">Number</span> = <span class="keyword">NaN</span>;
+     <span class="keyword">var</span> <span class="identifier">_loc5_</span>:<span class="type">Number</span> = <span class="keyword">NaN</span>;
+     <span class="keyword">var</span> <span class="identifier">_loc6_</span>:<span class="type">int</span> = <span class="number">0</span>;
+     <span class="keyword">var</span> <span class="identifier">_loc2_</span>:<span class="type">int</span> = <span class="number">0</span>;
+     <span class="identifier">_loc6_</span> = <span class="number">0</span>;
+     <span class="keyword-control">while</span>(<span class="identifier">_loc6_</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>)
+     {
+        <span class="identifier">_loc2_</span> += <span class="identifier">param1</span>[<span class="identifier">_loc6_</span>];
+        <span class="identifier">_loc6_</span>++;
+     }
+     <span class="keyword-control">if</span>(<span class="identifier">_loc2_</span> == <span class="number">0</span>)
+     {
+        <span class="keyword-control">return</span> <span class="keyword">false</span>;
+     }
+     <span class="identifier">_loc6_</span> = <span class="number">0</span>;
+     <span class="keyword-control">while</span>(<span class="identifier">_loc6_</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>)
+     {
+        <span class="identifier">_loc3_</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">_loc6_</span>][<span class="number">0</span>]);
+        <span class="identifier">_loc4_</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">_loc6_</span>][<span class="number">1</span>]);
+        <span class="identifier">_loc5_</span> = <span class="number">100</span> * <span class="identifier">param1</span>[<span class="identifier">_loc6_</span>] / <span class="identifier">_loc2_</span>;
+        <span class="keyword-control">if</span>(<span class="identifier">_loc5_</span> &gt; <span class="identifier">_loc3_</span>)
+        {
+           <span class="keyword-control">return</span> <span class="keyword">false</span>;
+        }
+        <span class="keyword-control">if</span>(<span class="identifier">_loc5_</span> &lt; <span class="identifier">_loc4_</span>)
+        {
+           <span class="keyword-control">return</span> <span class="keyword">false</span>;
+        }
+        <span class="identifier">_loc6_</span>++;
+     }
+     <span class="keyword-control">return</span> <span class="keyword">true</span>;
+  }
+</pre>
+        </div>
+
+        <p>Okay, there's a lot here, and a lot of automatically named variables. We can trim down on this by doing the same conversion of <code>while</code> loops to <code>for</code> or <code>forEach</code> loops, along with combining the last two conditionals into one.</p>
+
+        <aside style="margin-top: 18.5rem;">
+            <p>
+                <code>_loc3_</code> through to <code>_loc5_</code> being initialised to <code>NaN</code> in the unaltered code may be a quirk of the decompiler. See, it already knows that this variable is a <code>Number</code>, so it's trying to determine what the value of it is. But, an uninitialised variable in ECMAScript defaults to <code>undefined</code>, which, when converted to a <code>Number</code> becomes <code>NaN</code>, which is why I have removed the assignment expression in favour of a declaration.
+            </p>
+        </aside>
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1130-1164 (modified)</pre>
+            <pre class="insert">
+<span class="keyword">public function</span> <span class="function">checkIfBalancedDiet</span>(<span class="identifier">param1</span>:<span class="type">Array</span>) : <span class="type">Boolean</span>
+{
+    <span class="keyword">var</span> <span class="identifier">_loc2_</span>: <span class="type">int</span> = <span class="number">0</span>;
+
+    <span class="identifier">param1</span>.<span class="function">forEach</span>((<span class="identifier">i</span>) => {
+        <span class="identifier">_loc2_</span> += <span class="identifier">param1</span>[<span class="identifier">i</span>];
+    });
+    
+    <span class="keyword-control">if</span> (<span class="identifier">_loc2_</span> == <span class="number">0</span>)
+    {
+        <span class="keyword-control">return</span> <span class="keyword">false</span>;
+    }
+
+    <span class="keyword">var</span> <span class="identifier">_loc3_</span>: <span class="type">Number</span>, <span class="identifier">_loc4_</span>: <span class="type">Number</span>, <span class="identifier">_loc5_</span>: <span class="type">Number</span>;
+    <span class="keyword-control">for</span> (<span class="keyword">var</span> <span class="identifier">i</span>: <span class="type">int</span> = <span class="number">0</span>; <span class="identifier">i</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>; <span class="identifier">i</span>++)
+    {
+        <span class="identifier">_loc3_</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">0</span>]);
+        <span class="identifier">_loc4_</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">1</span>]);
+        <span class="identifier">_loc5_</span> = <span class="number">100</span> * <span class="identifier">param1</span>[<span class="identifier">i</span>] / <span class="identifier">_loc2_</span>;
+        
+        <span class="keyword-control">if</span> (<span class="identifier">_loc3_</span> &lt; <span class="identifier">_loc5_</span> || <span class="identifier">_loc5_</span> &lt; <span class="identifier">_loc4_</span>)
+        {
+           <span class="keyword-control">return</span> <span class="keyword">false</span>;
+        }
+    }
+    <span class="keyword-control">return</span> <span class="keyword">true</span>;
+}
+</pre>
+        </div>
+
+        <p>The <code>forEach</code> loop at the start simply counts the number of food items in the cart, since <code>getFoodRatio()</code> outputs the number of items in the cart in a certain category of foods, so summing the number of items in a category would be equal to the total number of items. This means that <code>_loc2_</code> is just a count of the items in the cart, which would explain the first conditional: if there are no items in the cart, it couldn't be considered a balanced diet. Which makes sense.</p>
+        <div class="code-block">
+            <pre class="language">ActionScript</pre>
+            <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1130-1164 (modified)</pre>
+            <pre class="insert">
+<span class="keyword">public function</span> <span class="function">checkIfBalancedDiet</span>(<span class="identifier">param1</span>:<span class="type">Array</span>) : <span class="type">Boolean</span>
+{
+	<span class="comment">// ...</span>
+	<span class="keyword">var</span> <span class="identifier">_loc3_</span>: <span class="type">Number</span>, <span class="identifier">_loc4_</span>: <span class="type">Number</span>, <span class="identifier">_loc5_</span>: <span class="type">Number</span>;
+	<span class="keyword-control">for</span> (<span class="keyword">var</span> <span class="identifier">i</span>: <span class="type">int</span> = <span class="number">0</span>; <span class="identifier">i</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>; <span class="identifier">i</span>++)
+	{
+		<span class="identifier">_loc3_</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">0</span>]);
+		<span class="identifier">_loc4_</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">1</span>]);
+		<span class="identifier">_loc5_</span> = <span class="number">100</span> * <span class="identifier">param1</span>[<span class="identifier">i</span>] / <span class="identifier">total</span>;
+		<span class="keyword-control">if</span> (<span class="identifier">_loc3_</span> &lt; <span class="identifier">_loc5_</span> || <span class="identifier">_loc5_</span> &lt; <span class="identifier">_loc4_</span>)
+		{
+		   <span class="keyword-control">return</span> <span class="keyword">false</span>;
+		}
+	}
+	<span class="keyword-control">return</span> <span class="keyword">true</span>;
+}
+</pre>
+    </div>
+
+    <p>Now we have three unnamed <code>Number</code>s. From the name of the static config variable that <code>_loc3_</code>s and <code>_loc4_</code>s get their values from, along with the <code>if</code>s statement below, it is safe to assume that they are the start and end points of a range. Let's look at <code>Config.GAME_BALANCEDIETRANGE</code> to see what the order is.</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source">com.novelgames.flashgames.supergroceryshopper.Config:5</pre>
+        <pre class="insert">
+<span class="keyword">public static var</span> <span class="constant">GAME_BALANCEDIETRANGE</span>:<span class="type">Array</span> = [[<span class="number">55</span>,<span class="number">40</span>],[<span class="number">35</span>,<span class="number">25</span>],[<span class="number">20</span>,<span class="number">10</span>],[<span class="number">10</span>,<span class="number">0</span>]];
+</pre>
+    </div>
+
+    <p>Okay, it's a conglomeration of random numbers. Let's prettify it.</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source">com.novelgames.flashgames.supergroceryshopper.Config:5 (modified)</pre>
+        <pre class="insert">
+<span class="keyword">public static var</span> <span class="constant">GAME_BALANCEDIETRANGE</span>: <span class="type">Array</span> = [
+	[<span class="number">55</span>, <span class="number">40</span>],
+	[<span class="number">35</span>, <span class="number">25</span>],
+	[<span class="number">20</span>, <span class="number">10</span>],
+	[<span class="number">10</span>, <span class="number">0</span>]
+];
+</pre>
+    </div>
+
+    <aside style="margin-top: 2.5rem;">
+        <p>
+            Dreaming noticed that typo first.
+        </p>
+    </aside>
+    <p>At this point, I was still confused about what the numbers actually meant - the variable name doesn't actually tell you anything other than the fact that it is a range to do with the balanced iet (or the balance diet), but that didn't really matter right now. I did spend a stupidly long amount of time trying to figure this out by looking at the variable itself, which, not the smartest idea, but it was 11pm or later.</p>
+    <p>What we <i>do</i> know, however, is that the upper bound of the range is in the zeroth index, while the minimum is in the first, and we can now substitute our variable names for <code>_loc3_</code> and <code>_loc4_</code>.</p>
+    <p>And, as a side-tangent, we can also substitute <code>max &lt; _loc5_ || _loc5 &lt; min</code> with <code>!(min &lt;= _loc5_ && _loc5_ &lt;= max)</code>, because they are equal, due to De Morgan's laws.</p>
+
+    <div class="code-block">
+        <pre class="insert">
+   !(<span class="identifier">min</span> &lt;= <span class="identifier">_loc5_</span> && <span class="identifier">_loc5_</span> &lt;= <span class="identifier">max</span>)
+-> !(<span class="identifier">min</span> &lt;= <span class="identifier">_loc5_</span>) || !(<span class="identifier">_loc5_</span> &lt;= <span class="identifier">max</span>) <span class="comment">// De Morgan's Law</span>
+-> <span class="identifier">min</span> &gt; <span class="identifier">_loc5_</span> || <span class="identifier">_loc5_</span> &gt; <span class="identifier">max</span> <span class="comment">// Removing !s</span>
+-> <span class="identifier">_loc5_</span> &lt; <span class="identifier">min</span> || <span class="identifier">max</span> &lt; <span class="identifier">_loc5_</span> <span class="comment">// Reordering</span>
+-> <span class="identifier">max</span> &lt; <span class="identifier">_loc5_</span> || <span class="identifier">_loc5_</span> &lt; <span class="identifier">min</span>
+</pre>
+    </div>
+
+    <p>And with those substitutions, we get:</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1148-1163 (modified)</pre>
+        <pre class="insert">
+<span class="keyword">var</span> <span class="identifier">min</span>: <span class="type">Number</span>, <span class="identifier">max</span>: <span class="type">Number</span>, <span class="identifier">_loc5_</span>: <span class="type">Number</span>;
+<span class="keyword-control">for</span> (<span class="keyword">var</span> <span class="identifier">i</span>: <span class="type">int</span> = <span class="number">0</span>; <span class="identifier">i</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>; <span class="identifier">i</span>++)
+{
+	<span class="identifier">max</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">0</span>]);
+	<span class="identifier">min</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">1</span>]);
+	<span class="identifier">_loc5_</span> = <span class="number">100</span> * <span class="identifier">param1</span>[<span class="identifier">i</span>] / <span class="identifier">total</span>;
+	<span class="keyword-control">if</span> (!(<span class="identifier">min</span> &lt;= <span class="identifier">_loc5_</span> && <span class="identifier">_loc5_</span> &lt;= <span class="identifier">max</span>))
+	{
+	   <span class="keyword-control">return</span> <span class="keyword">false</span>;
+	}
+}
+<span class="keyword-control">return</span> <span class="keyword">true</span>;
+</pre>
+    </div>
+
+    <p>Now, we still have <code>_loc5_</code> to rename. The formula immediately rang out to me.</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source"></pre>
+        <pre class="insert">
+<span class="identifier">_loc5_</span> = <span class="number">100</span> * <span class="identifier">param1</span>[<span class="identifier">i</span>] / <span class="identifier">total</span>;
+</pre>
+    </div>
+
+    <p><code>param1</code> is the number of foods in a specific category. Dividing it by the total, and multiplying it by 100? This is just the formula for finding a percentage!</p>
+
+    <p>
+        \[
+            \text{Percentage of items in a category} = 100 \times \frac{\text{# of items in a category}}{\text{Total number of items}}
+        \]
+    </p>
+
+    <p>So, <code>_loc5_</code> is the percentage of food items in a category of the game's food pyramid, giving us</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source">com.novelgames.flashgames.supergroceryshopper.Game:1148-1163 (modified)</pre>
+        <pre class="insert">
+<span class="keyword">var</span> <span class="identifier">min</span>: <span class="type">Number</span>, <span class="identifier">max</span>: <span class="type">Number</span>, <span class="identifier">percentage</span>: <span class="type">Number</span>;
+<span class="keyword-control">for</span> (<span class="keyword">var</span> <span class="identifier">i</span>: <span class="type">int</span> = <span class="number">0</span>; <span class="identifier">i</span> &lt; <span class="identifier">param1</span>.<span class="identifier">length</span>; <span class="identifier">i</span>++)
+{
+	<span class="identifier">max</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">0</span>]);
+	<span class="identifier">min</span> = <span class="type">Number</span>(<span class="type">Config</span>.<span class="constant">GAME_BALANCEDIETRANGE</span>[<span class="identifier">i</span>][<span class="number">1</span>]);
+	<span class="identifier">percentage</span> = <span class="number">100</span> * <span class="identifier">param1</span>[<span class="identifier">i</span>] / <span class="identifier">total</span>;
+	<span class="keyword-control">if</span> (!(<span class="identifier">min</span> &lt;= <span class="identifier">percentage</span> && <span class="identifier">percentage</span> &lt;= <span class="identifier">max</span>))
+	{
+	   <span class="keyword-control">return</span> <span class="keyword">false</span>;
+	}
+}
+<span class="keyword-control">return</span> <span class="keyword">true</span>;
+</pre>
+    </div>
+
+    <p>Something I've swept under the rug here is that you, the reader, have the luxury of me rewriting the code for you. In this readable state, it's a lot clearer to see what the code is doing. I, however, had stared at the unaltered code for a pretty long time before working out what was happening. If you need a reminder, go to the start of <a href="#balanced">this section</a>.</p>
+
+    <h2>So, how did the game determine "healthy"-ness?</h2>
+
+    <p>Recall our "lines of note" from the start of this journey.</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source">com.novelgames.flashgames.supergroceryshopper.ShoppingCartPage:145-146,154-174</pre>
+        <pre class="insert">
+<span class="keyword">var</span> <span class="identifier">_loc1_</span>:<span class="type">Array</span> = <span class="type">Object</span>(<span class="identifier">parent</span>).<span class="function">getFoodRatio</span>(<span class="identifier">foodArray</span>);
+<span class="keyword">var</span> <span class="identifier">_loc2_</span>:<span class="type">Boolean</span> = <span class="type">Boolean</span>(<span class="type">Object</span>(<span class="identifier">parent</span>).<span class="function">checkIfBalancedDiet</span>(<span class="identifier">_loc1_</span>));
+<span class="comment">// ...</span>
+<span class="keyword-control">if</span>(!<span class="identifier">_loc2_</span>)
+{
+    <span class="comment">// ...</span>
+}
+<span class="keyword-control">else</span>
+{
+    <span class="identifier">pyramid</span>.<span class="identifier">status</span>.<span class="function">gotoAndStop</span>(<span class="string">"healthy"</span>);
+}
+</pre>
+    </div>
+
+    <p>Your diet is considered "healthy" as long as <code>checkIfBalancedDiet()</code> returns <code>true</code>, which happens when the percentage of foods per category matched a range specified by this config variable.</p>
+
+    <div class="code-block">
+        <pre class="language">ActionScript</pre>
+        <pre class="source">com.novelgames.flashgames.supergroceryshopper.Config:5 (modified)</pre>
+        <pre class="insert">
+<span class="keyword">public static var</span> <span class="constant">GAME_BALANCEDIETRANGE</span>: <span class="type">Array</span> = [
+	[<span class="number">55</span>, <span class="number">40</span>], <span class="comment">// Grains</span>
+	[<span class="number">35</span>, <span class="number">25</span>], <span class="comment">// Fruits &amp; Vegetables</span>
+	[<span class="number">20</span>, <span class="number">10</span>], <span class="comment">// Animal Products</span>
+	[<span class="number">10</span>, <span class="number">0</span>]   <span class="comment">// Sugary and Oily</span>
+];
+</pre>
+    </div>
+
+    <p>So, as long as your shopping cart contains 40%-55% grains, 25%-35% fruits and/or vegetables, 10%-20% animal products, and 0-10% sugary and oily foods, the diet is considered "balanced", and therefore, healthy.</p>
+    <p>Now, time to crunch the numbers and see if I was correct in my reverse-engineering.</p>
+    <p>There are a lot of cases that can be met, but I had initially started with the case of having no sugary or oily foods, and one animal product, which I solved through a brute-force-like approach.</p>
+
+    <aside style="margin-top: 2.3rem;">
+        <p>
+            I initially started with 1 animal product out of 10 items, but this did not work out for the fruits and vegetables. Try working it out yourself!
+        </p>
+    </aside>
+    <p>Since animal products <i>must</i> be within the range of 10%-20%, through some number crunching, I found that to get within the range is to have 1 animal product out of 6 total items, since \(\frac{1}{6} \approx 17\%\). My next guess was 3 grains, since it had to be around half of the cart, and \(\frac{3}{6} = 50\%\). That leaves us with 2 fruits and vegetables, because \(\frac{2}{6} \approx 33\%\). Checking against the conditions of <code>checkIfBalancedDiet()</code> gives us</p>
+
+    <p>
+        \[
+            \begin{align*}
+                \text{Sugary, Oily:} && 0\% \leq \frac{0}{6} \leq 10\% \checkmark\\
+                \text{Animal Products:} && 10\% \leq \frac{1}{6} \leq 20\% \checkmark\\
+                \text{Fruit, Vegetables:} && 25\% \leq \frac{2}{6} \leq 35\% \checkmark\\
+                \text{Grains:} && 40\% \leq \frac{3}{6} \leq 55\% \checkmark\\
+            \end{align*}
+        \]
+    </p>
+
+    <p>Well, it seems to work on paper. Let's try it in the game!</p>
+
+    <img src="healthy.png" alt="A screenshot of a Discord conversation. Dreaming pings @everyone with a screenshot of the game. The screenshot shows the cart with 0 sugary/oily, 1 animal product, 2 fruit/vegetables, and 3 grains. It states 'Healthy!'. I respond with '(dreaming has never seen 'Healthy!' in his life)', '(i spent a good amount of time staring at actionscript code)'. Dreaming then pins the screenshot in the chat."/>
+
+    <aside style="margin-top: 0.5rem;">
+        <p>Cue the stegosaurus.</p>
+        <img src="stegosaurus.png" alt="The stegosaurus from asdfmovie4." style="width: 50%; margin-left: 0;"/>
+    </aside>
+    <p>It worked. My reverse engineering worked!</p>
+    <p>This also applied to any multiple of the ratio 0:1:2:3, since the percentages would be identical.</p>
+
+    <img src="playthrough5/day3cart.png" style="width: 90%" alt="A screenshot of Super Grocery Shopper. The cart contains 0 sugary/oily, 2 animal products, 4 fruit/vegetables, and 6 grains. It is also considered healthy."/>
+
+    <p>Next up, having one sugary or oily food, since the game required Dreaming to pick up an ice cream from the store in order to get bonus points.</p>
+    <p>The maximum for sugary and oily foods is 10%, meaning that for one sugary/oily food, you would need nine other foods to get within this range, since \(\frac{1}{10} = 10\%\). Grains had to take up the majority of the items, and either 4 or 5 grain products would have worked with the range of 40%-55%, but I went with 5 initially, giving us 50% grains, and 4 items left to work with. Fruits and vegetables needed to take up 25%-35% of the cart, which means I was forced into including 3 fruits and/or vegetables in the cart, since \(\frac{3}{10} = 30\%\), and that was the only value within the range, leaving us with 1 animal product, which makes it 10% of the cart. Checking against the conditions...</p>
+
+    <p>
+        \[
+            \begin{align*}
+                \text{Sugary, Oily:} && 0\% \leq \frac{1}{10} \leq 10\% \checkmark\\
+                \text{Animal Products:} && 10\% \leq \frac{1}{10} \leq 20\% \checkmark\\
+                \text{Fruit, Vegetables:} && 25\% \leq \frac{3}{10} \leq 35\% \checkmark\\
+                \text{Grains:} && 40\% \leq \frac{5}{10} \leq 55\% \checkmark\\
+            \end{align*}
+        \]
+    </p>
+
+    <p>This <i>also</i> worked. It wasn't just a fluke the first time.</p>
+
+    <img src="playthrough1/day1cart.png" style="width: 90%;" alt="Another Super Grocery Shopper cart screenshot. 1 sugary/oily, 1 animal product, 3 fruit/vegetable, 5 grains. It is considered healthy."/>
+
+    <p>The last bit of number crunching I did on the night was when Dreaming was required to get 3 fruits and vegetables to pick up a bonus. I started with assuming 10 items in the cart, since 30% of the cart being fruits and vegetables fit within the "healthy" range. Grains took up half of the cart again, taking 5 of the 10 spots, and animal products taking the last 2 of 10 spots. Sugary/oily food was to be avoided, since the constraint it provided when even *one* was in the cart was too much to work with, given the calorie and budget requirements.</p>
+    <p>Checking against the conditions gives us</p>
+
+    <p>
+        \[
+            \begin{align*}
+                \text{Sugary, Oily:} && 0\% \leq \frac{0}{10} \leq 10\% \checkmark\\
+                \text{Animal Products:} && 10\% \leq \frac{2}{10} \leq 20\% \checkmark\\
+                \text{Fruit, Vegetables:} && 25\% \leq \frac{3}{10} \leq 35\% \checkmark\\
+                \text{Grains:} && 40\% \leq \frac{5}{10} \leq 55\% \checkmark\\
+            \end{align*}
+        \]
+    </p>
+
+    <img src="playthrough5/day5cart.png" style="width: 90%;" alt="Yeah, another cart screenshot. 0 sugary/oily, 2 animal products, 3 fruit/vegetables, 5 grains. Healthy!"/>
+    <p>Another hit. I think it is safe to say that my reverse engineering efforts were not in vain.</p>
+
+    <h2>Concluding</h2>
+
+    <aside style="margin-top: 4.3rem;">
+        <p>
+            As an example, figuring out that the <code>while</code> loops were really just <code>for</code> loops that the decompiler didn't notice.
+        </p>
+    </aside>
+    <p>For the first time I looked at decompiled code with an actual understanding of how things worked, this was a fun way to pass the time for a late December night. It was a good puzzle, trying to find things that fit patterns that I, as a programmer, had used frequently. It's not all too often that you get to do what you normally do but in reverse.</p>
+    <p>And the payoff for the work? Super rewarding. Comparable to when a project you've been working on is finally in a functional state after some time. (seriously, my commits on "functional" pushes are always celebratory)</p>
+    <p>It also told me that learning about the deeper complexities of coding and computer science in general is not a bad thing. I wouldn't've taken this on if it weren't for the fact that I had heard of ActionScript as an implementation of ECMAScript.</p>
+    <p>And for Dreaming? Well, he now knows how to eat healthily (is that a word?), and had his <a href="https://www.youtube.com/watch?v=7c9_oa5kBSU" title="I don't have any recommendations for you. I'm basically a lesbian.">yaoi</a> organised. So we all won in this situation.</p>
+
+    <hr>
+
+    <p style="color: #444; text-align: center;"><i>Last modified at 21:06 GMT+10 on 30/12/2024.</i></p>
+</body>
+</html>
